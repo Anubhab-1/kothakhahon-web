@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kothakhahon Prokashoni Web
 
-## Getting Started
+Production-style Next.js App Router storefront for Bengali books, with:
+- CMS content from Sanity
+- Auth + commerce persistence in Supabase
+- Razorpay checkout order/payment flow
+- Fallback content for graceful degradation when CMS is unavailable
 
-First, run the development server:
+## Tech Stack
+- Next.js 16 (App Router, TypeScript)
+- React 19
+- Tailwind CSS 4
+- Sanity (`next-sanity`)
+- Supabase (`@supabase/ssr`, `@supabase/supabase-js`)
+- Razorpay
+- React Hook Form + Zod
 
+## Local Setup
+
+### 1. Install dependencies
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Configure environment
+Copy `.env.example` to `.env.local` and fill values.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Required vars:
+- `NEXT_PUBLIC_SITE_URL`
+- `NEXT_PUBLIC_SANITY_PROJECT_ID`
+- `NEXT_PUBLIC_SANITY_DATASET`
+- `SANITY_API_TOKEN` (required for protected/extended Sanity ops)
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (required for server-only form APIs)
+- `RAZORPAY_KEY_ID`
+- `RAZORPAY_KEY_SECRET`
+- `NEXT_PUBLIC_RAZORPAY_KEY_ID`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3. Run database migrations
+Apply SQL files in order:
+1. `supabase/migrations/20260302_phase13_auth_and_core_tables.sql`
+2. `supabase/migrations/20260303_phase14_forms_tables.sql`
 
-## Learn More
+### 4. Run the app
+```bash
+npm run dev
+```
+Open `http://localhost:3000`.
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
+- `npm run dev` - start local dev server
+- `npm run lint` - run ESLint
+- `npm run build` - production build + type check
+- `npm run start` - run built app
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Feature Overview
+- `Auth`: register/login/logout/callback with protected `/account` and `/checkout`
+- `Catalog`: book listing + filtering
+- `Book Detail`: rich detail view + approved review rendering from Supabase
+- `Cart`: local cart state + Supabase sync
+- `Wishlist`: persisted per-user toggle + account wishlist view
+- `Checkout`: creates order, creates Razorpay order, verifies signature, marks payment paid
+- `Account`: orders list/detail + wishlist + basic metrics
+- `Lead Capture`: contact, manuscript, newsletter API persistence
+- `SEO`: robots + dynamic sitemap routes
+- `CMS Studio`: mounted at `/studio`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Key Paths
+- `app/` - routes, API handlers
+- `components/` - UI and client interactions
+- `lib/` - shared integration and utilities
+- `sanity/` - Sanity schemas
+- `supabase/migrations/` - schema and RLS migrations
 
-## Deploy on Vercel
+## Notes
+- Checkout and form APIs return `503` when required backend env is missing.
+- Sanity-powered pages intentionally include fallback content paths for resilience.
+- Use the migration files under `supabase/migrations/` as the single source of truth.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Audit Artifacts
+- `AUDIT_FILE_FEATURE_MATRIX.md`
+- `AUDIT_FINDINGS_SUMMARY.md`
+- `AUDIT_QUICK_WINS.md`

@@ -1,65 +1,144 @@
-import Image from "next/image";
+import HomePageClient from "@/components/home/HomePageClient";
+import {
+  getAllAuthors,
+  getFeaturedBooks,
+  getLatestBlogPosts,
+  getSiteSettings,
+  hasSanityEnv,
+} from "@/lib/sanity";
+import type { Author, BlogPost, Book } from "@/lib/types";
 
-export default function Home() {
+export const revalidate = 60;
+
+const fallbackBooks: Book[] = [
+  {
+    _id: "fallback-book-1",
+    title: "Shobder Nodi",
+    slug: "shobder-nodi",
+    author: { _id: "a-1", name: "Arindam Sen", slug: "arindam-sen" },
+    price: 450,
+  },
+  {
+    _id: "fallback-book-2",
+    title: "Nirjan Pathshala",
+    slug: "nirjan-pathshala",
+    author: { _id: "a-2", name: "Moumita Das", slug: "moumita-das" },
+    price: 380,
+  },
+  {
+    _id: "fallback-book-3",
+    title: "Dhonir Bhasha",
+    slug: "dhonir-bhasha",
+    author: { _id: "a-3", name: "Sagnik Roy", slug: "sagnik-roy" },
+    price: 520,
+  },
+  {
+    _id: "fallback-book-4",
+    title: "Onubader Ayna",
+    slug: "onubader-ayna",
+    author: { _id: "a-4", name: "Lopamudra Bose", slug: "lopamudra-bose" },
+    price: 410,
+  },
+  {
+    _id: "fallback-book-5",
+    title: "Smritir Map",
+    slug: "smritir-map",
+    author: { _id: "a-1", name: "Arindam Sen", slug: "arindam-sen" },
+    price: 430,
+  },
+  {
+    _id: "fallback-book-6",
+    title: "Chhaya Shohor",
+    slug: "chhaya-shohor",
+    author: { _id: "a-7", name: "Tanmoy Ghosh", slug: "tanmoy-ghosh" },
+    price: 495,
+  },
+  {
+    _id: "fallback-book-7",
+    title: "Bangla Boi Archive",
+    slug: "bangla-boi-archive",
+    author: { _id: "a-8", name: "Debolina Dhar", slug: "debolina-dhar" },
+    price: 560,
+  },
+];
+
+const fallbackPosts: BlogPost[] = [
+  {
+    _id: "fallback-post-1",
+    title: "Why Bengali Literary Editing Still Matters",
+    slug: "why-bengali-literary-editing-still-matters",
+    category: "Editorial",
+    excerpt:
+      "A short note from our editorial desk about language standards, rhythm, and reader trust.",
+  },
+  {
+    _id: "fallback-post-2",
+    title: "Building a Publisher Catalog That Ages Well",
+    slug: "building-a-publisher-catalog-that-ages-well",
+    category: "Publishing",
+    excerpt:
+      "How we think about balance between classics, experiments, and contemporary voices.",
+  },
+  {
+    _id: "fallback-post-3",
+    title: "Inside the Manuscript Review Process",
+    slug: "inside-the-manuscript-review-process",
+    category: "For Authors",
+    excerpt:
+      "A transparent look at what we read for, how long it takes, and what feedback we give.",
+  },
+];
+
+const fallbackAuthor: Author = {
+  _id: "fallback-author",
+  name: "Featured Author",
+  slug: "featured-author",
+  bio: "A major contemporary Bengali voice shaping new literary conversations.",
+};
+
+function isFulfilled<T>(result: PromiseSettledResult<T>): result is PromiseFulfilledResult<T> {
+  return result.status === "fulfilled";
+}
+
+export default async function HomePage() {
+  let featuredBooks = fallbackBooks;
+  let latestPosts = fallbackPosts;
+  let featuredAuthor: Author | null = fallbackAuthor;
+  let heroTagline: string | undefined;
+  let heroTaglineEn: string | undefined;
+  let missionStatement: string | undefined;
+
+  if (hasSanityEnv()) {
+    const [settingsResult, booksResult, postsResult, authorsResult] = await Promise.allSettled([
+      getSiteSettings(),
+      getFeaturedBooks(),
+      getLatestBlogPosts(),
+      getAllAuthors(),
+    ]);
+
+    const settings = isFulfilled(settingsResult) ? settingsResult.value : null;
+    const books = isFulfilled(booksResult) ? booksResult.value : [];
+    const posts = isFulfilled(postsResult) ? postsResult.value : [];
+    const authors = isFulfilled(authorsResult) ? authorsResult.value : [];
+
+    const settingsFeaturedBooks = settings?.featuredBooks ?? [];
+    featuredBooks =
+      books.length > 0 ? books : settingsFeaturedBooks.length > 0 ? settingsFeaturedBooks : fallbackBooks;
+    latestPosts = posts.length > 0 ? posts : fallbackPosts;
+    featuredAuthor = settings?.featuredAuthor ?? authors[0] ?? fallbackAuthor;
+    heroTagline = settings?.heroTagline;
+    heroTaglineEn = settings?.heroTaglineEn;
+    missionStatement = settings?.missionStatement;
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <HomePageClient
+      featuredBooks={featuredBooks}
+      latestPosts={latestPosts}
+      featuredAuthor={featuredAuthor}
+      heroTagline={heroTagline}
+      heroTaglineEn={heroTaglineEn}
+      missionStatement={missionStatement}
+    />
   );
 }
